@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pascal Quest IA</title>
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:linear-gradient(135deg,#1e3c72,#2a5298);
+      color:#222;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .container{
+      width:100%;
+      max-width:900px;
+      background:#fff;
+      border-radius:20px;
+      padding:28px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    h1,h2,h3{text-align:center;margin-top:0}
+    h1{color:#1e3c72}
+    .subtitle{text-align:center;color:#555;margin-bottom:20px}
+    .info-box{
+      background:#eef5ff;
+      border-left:6px solid #1e3c72;
+      padding:15px;
+      border-radius:10px;
+      margin-bottom:18px;
+    }
+    .btn{
+      background:#1e3c72;
+      color:#fff;
+      border:none;
+      padding:12px 22px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:16px;
+      margin:8px 4px;
+      transition:.2s;
+    }
+    .btn:hover{background:#16305c;transform:scale(1.03)}
+    .btn-option{
+      width:100%;
+      text-align:left;
+      background:#f4f6f8;
+      color:#222;
+      border:2px solid #ddd;
+      margin:8px 0;
+    }
+    .btn-option:hover{background:#e9f1ff;border-color:#1e3c72}
+    .correct{background:#d4edda!important;border-color:#28a745!important}
+    .incorrect{background:#f8d7da!important;border-color:#dc3545!important}
+    .topbar{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-bottom:15px;
+    }
+    .badge{
+      background:#f1f1f1;
+      border-radius:10px;
+      padding:10px;
+      text-align:center;
+      font-weight:bold;
+    }
+    .progress{
+      width:100%;
+      height:18px;
+      background:#ddd;
+      border-radius:20px;
+      overflow:hidden;
+      margin:12px 0 22px;
+    }
+    .progress-bar{
+      height:100%;
+      width:0%;
+      background:#1e3c72;
+      transition:.3s;
+    }
+    .question{
+      font-size:21px;
+      font-weight:bold;
+      margin:20px 0;
+      line-height:1.4;
+    }
+    .feedback{
+      margin-top:15px;
+      padding:14px;
+      border-radius:10px;
+      display:none;
+      font-weight:bold;
+    }
+    .feedback.good{background:#d4edda;color:#155724}
+    .feedback.bad{background:#f8d7da;color:#721c24}
+    .center{text-align:center}
+    .hidden{display:none}
+    .pascal{
+      font-family:"Courier New",monospace;
+      background:#111;
+      color:#00ff9d;
+      padding:15px;
+      border-radius:12px;
+      overflow:auto;
+      text-align:center;
+      line-height:1.7;
+      margin:12px 0;
+    }
+    .final-score{
+      font-size:30px;
+      font-weight:bold;
+      text-align:center;
+      color:#1e3c72;
+    }
+    .rank{
+      background:#eef5ff;
+      padding:15px;
+      border-radius:12px;
+      margin-top:12px;
+    }
+    @media(max-width:650px){
+      .container{padding:18px}
+      .topbar{grid-template-columns:1fr}
+      .question{font-size:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="startScreen">
+      <h1>Pascal Quest IA</h1>
+      <p class="subtitle">Actividad gamificada sobre el Teorema del Binomio y el Triángulo de Pascal</p>
+      <div class="info-box">
+        <strong>Objetivo:</strong> Aplicar el Teorema del Binomio para desarrollar expresiones algebraicas, identificar coeficientes binomiales y determinar términos específicos.
+      </div>
+      <div class="pascal">
+        1<br>
+        1&nbsp;&nbsp;1<br>
+        1&nbsp;&nbsp;2&nbsp;&nbsp;1<br>
+        1&nbsp;&nbsp;3&nbsp;&nbsp;3&nbsp;&nbsp;1<br>
+        1&nbsp;&nbsp;4&nbsp;&nbsp;6&nbsp;&nbsp;4&nbsp;&nbsp;1<br>
+        1&nbsp;&nbsp;5&nbsp;&nbsp;10&nbsp;&nbsp;10&nbsp;&nbsp;5&nbsp;&nbsp;1
+      </div>
+      <div class="info-box">
+        <p><strong>Reglas:</strong></p>
+        <p>Respuestas correctas: +1 o +2 puntos según dificultad.</p>
+        <p>Respuestas incorrectas: -1 o -2 puntos según dificultad.</p>
+        <p>Tienes 30 segundos por pregunta.</p>
+      </div>
+      <div class="center">
+        <button class="btn" onclick="startGame()">Iniciar actividad</button>
+      </div>
+    </div>
+
+    <div id="gameScreen" class="hidden">
+      <h2>Pascal Quest IA</h2>
+      <div class="topbar">
+        <div class="badge">Pregunta: <span id="questionNumber">1</span>/20</div>
+        <div class="badge">Puntaje: <span id="score">0</span></div>
+        <div class="badge">Tiempo: <span id="time">30</span>s</div>
+      </div>
+      <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+      <div id="difficulty" class="badge"></div>
+      <div id="questionText" class="question"></div>
+      <div id="options"></div>
+      <div id="feedback" class="feedback"></div>
+      <div class="center">
+        <button id="nextBtn" class="btn hidden" onclick="nextQuestion()">Siguiente</button>
+      </div>
+    </div>
+
+    <div id="endScreen" class="hidden">
+      <h1>Resultados finales</h1>
+      <p class="final-score">Puntaje obtenido: <span id="finalScore"></span></p>
+      <div id="finalMessage" class="rank"></div>
+      <div class="center">
+        <button class="btn" onclick="restartGame()">Reiniciar actividad</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        q:"¿Cuál es la fila del Triángulo de Pascal que corresponde a (x + y)^3?",
+        options:["1, 2, 1","1, 3, 3, 1","1, 4, 6, 4, 1","1, 5, 10, 10, 5, 1"],
+        answer:1,
+        feedback:"La potencia 3 corresponde a la fila 1, 3, 3, 1.",
+        points:1,
+        level:"Fácil"
+      },
+      {
+        q:"¿Cuál es el desarrollo correcto de (a + b)^2?",
+        options:["a² + b²","a² + 2ab + b²","a² - 2ab + b²","2a + 2b"],
+        answer:1,
+        feedback:"El cuadrado de un binomio es a² + 2ab + b².",
+        points:1,
+        level:"Fácil"
+      },
+      {
+        q:"¿Qué coeficientes se usan para desarrollar (a + b)^4?",
+        options:["1, 3, 3, 1","1, 4, 6, 4, 1","1, 5, 10, 10, 5, 1","1, 2, 1"],
+        answer:1,
+        feedback:"Para potencia 4 se utiliza la fila 1, 4, 6, 4, 1.",
+        points:1,
+        level:"Fácil"
+      },
+      {
+        q:"¿Cuál es el segundo término de (x + y)^5?",
+        options:["5xy⁴","5x⁴y","10x³y²","x⁵"],
+        answer:1,
+        feedback:"El segundo término es 5x⁴y.",
+        points:1,
+        level:"Fácil"
+      },
+      {
+        q:"¿Cuál es el desarrollo de (x - y)^2?",
+        options:["x² + 2xy + y²","x² - 2xy + y²","x² - y²","x² + y²"],
+        answer:1,
+        feedback:"Cuando el binomio es resta, los signos se alternan.",
+        points:1,
+        level:"Fácil"
+      },
+      {
+        q:"¿Cuál es el desarrollo correcto de (x - y)^5?",
+        options:[
+          "x⁵ - 5x⁴y + 10x³y² - 10x²y³ + 5xy⁴ - y⁵",
+          "x⁵ + 5x⁴y + 10x³y² + 10x²y³ + 5xy⁴ + y⁵",
+          "x⁵ - 10x⁴y + 5x³y² - 10x²y³ + 5xy⁴ - y⁵",
+          "x⁵ - 5x³y² + 10xy⁴ - y⁵"
+        ],
+        answer:0,
+        feedback:"En (x-y)^5 los signos se alternan: +, -, +, -, +, -.",
+        points:2,
+        level:"Medio"
+      },
+      {
+        q:"¿Cuál es el desarrollo de (a + 2b)^3?",
+        options:[
+          "a³ + 6a²b + 12ab² + 8b³",
+          "a³ + 3a²b + 3ab² + b³",
+          "a³ + 2a²b + 4ab² + 8b³",
+          "a³ + 6a²b + 6ab² + 2b³"
+        ],
+        answer:0,
+        feedback:"Se usa 1,3,3,1: a³ + 3a²(2b) + 3a(2b)² + (2b)³.",
+        points:2,
+        level:"Medio"
+      },
+      {
+        q:"¿Cuál es el desarrollo de (c + 2d)^3?",
+        options:[
+          "c³ + 6c²d + 12cd² + 8d³",
+          "c³ + 3c²d + 6cd² + 8d³",
+          "c³ + 2c²d + 4cd² + 8d³",
+          "c³ + 6cd² + 12c²d + 8d³"
+        ],
+        answer:0,
+        feedback:"El desarrollo es c³ + 6c²d + 12cd² + 8d³.",
+        points:2,
+        level:"Medio"
+      },
+      {
+        q:"¿Cuál es el desarrollo de (2a + 4d)^3?",
+        options:[
+          "8a³ + 48a²d + 96ad² + 64d³",
+          "2a³ + 24a²d + 48ad² + 4d³",
+          "8a³ + 24a²d + 48ad² + 64d³",
+          "6a³ + 48a²d + 96ad² + 16d³"
+        ],
+        answer:0,
+        feedback:"(2a)³ + 3(2a)²(4d) + 3(2a)(4d)² + (4d)³.",
+        points:2,
+        level:"Medio"
+      },
+      {
+        q:"En (a + 2b)^3, ¿cuál es el coeficiente del término a²b?",
+        options:["3","4","6","12"],
+        answer:2,
+        feedback:"El término es 3a²(2b) = 6a²b.",
+        points:2,
+        level:"Medio"
+      },
+      {
+        q:"En (c + 2d)^3, ¿cuál es el coeficiente del término cd²?",
+        options:["6","8","12","4"],
+        answer:2,
+        feedback:"El término es 3c(2d)² = 12cd².",
+        points:2,
+        level:"Medio"
+      },
+      {
+        q:"En (x - y)^5, ¿cuál es el coeficiente de x³y²?",
+        options:["5","10","-10","-5"],
+        answer:1,
+        feedback:"El tercer término es +10x³y².",
+        points:2,
+        level:"Medio"
+      },
+      {
+        q:"En (x - y)^5, ¿cuál es el coeficiente de x²y³?",
+        options:["10","-10","5","-5"],
+        answer:1,
+        feedback:"El cuarto término es -10x²y³.",
+        points:2,
+        level:"Medio"
+      },
+      {
+        q:"¿Qué fila del Triángulo de Pascal se usa para desarrollar (x-y)^5?",
+        options:["1, 4, 6, 4, 1","1, 5, 10, 10, 5, 1","1, 6, 15, 20, 15, 6, 1","1, 3, 3, 1"],
+        answer:1,
+        feedback:"Para potencia 5 se usa la fila 1, 5, 10, 10, 5, 1.",
+        points:1,
+        level:"Fácil"
+      },
+      {
+        q:"¿Cuál es el término general del Teorema del Binomio para (a+b)^n?",
+        options:[
+          "Tₖ₊₁ = C(n,k)aⁿ⁻ᵏbᵏ",
+          "Tₖ = C(k,n)aᵏbⁿ",
+          "Tₙ = aⁿ + bⁿ",
+          "Tₖ₊₁ = nkaⁿbᵏ"
+        ],
+        answer:0,
+        feedback:"El término general es Tₖ₊₁ = C(n,k)aⁿ⁻ᵏbᵏ.",
+        points:2,
+        level:"Avanzado"
+      },
+      {
+        q:"En (2a + 4d)^3, ¿cuál es el coeficiente de a²d?",
+        options:["24","32","48","64"],
+        answer:2,
+        feedback:"3(2a)²(4d)=3·4a²·4d=48a²d.",
+        points:2,
+        level:"Avanzado"
+      },
+      {
+        q:"En (2a + 4d)^3, ¿cuál es el coeficiente de ad²?",
+        options:["48","64","96","128"],
+        answer:2,
+        feedback:"3(2a)(4d)²=3·2a·16d²=96ad².",
+        points:2,
+        level:"Avanzado"
+      },
+      {
+        q:"¿Cuál es el último término de (x-y)^5?",
+        options:["y⁵","-y⁵","5y⁵","-5y⁵"],
+        answer:1,
+        feedback:"Como la potencia de y es impar y el binomio es resta, el último término es -y⁵.",
+        points:1,
+        level:"Fácil"
+      },
+      {
+        q:"¿Cuál expresión tiene como desarrollo c³ + 6c²d + 12cd² + 8d³?",
+        options:["(c+d)³","(c+2d)³","(2c+d)³","(c-2d)³"],
+        answer:1,
+        feedback:"Ese desarrollo corresponde a (c+2d)³.",
+        points:2,
+        level:"Avanzado"
+      },
+      {
+        q:"¿Cuál expresión tiene como desarrollo 8a³ + 48a²d + 96ad² + 64d³?",
+        options:["(a+4d)³","(2a+2d)³","(2a+4d)³","(4a+2d)³"],
+        answer:2,
+        feedback:"Ese desarrollo corresponde a (2a+4d)³.",
+        points:2,
+        level:"Avanzado"
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let timeLeft = 30;
+    let timer;
+    let answered = false;
+
+    function startGame(){
+      document.getElementById("startScreen").classList.add("hidden");
+      document.getElementById("gameScreen").classList.remove("hidden");
+      showQuestion();
+    }
+
+    function showQuestion(){
+      answered = false;
+      timeLeft = 30;
+      document.getElementById("time").textContent = timeLeft;
+      document.getElementById("nextBtn").classList.add("hidden");
+      document.getElementById("feedback").style.display = "none";
+
+      const q = questions[currentQuestion];
+      document.getElementById("questionNumber").textContent = currentQuestion + 1;
+      document.getElementById("score").textContent = score;
+      document.getElementById("difficulty").textContent = "Dificultad: " + q.level + " | Valor: " + q.points + " punto(s)";
+      document.getElementById("questionText").textContent = q.q;
+      document.getElementById("progressBar").style.width = ((currentQuestion) / questions.length * 100) + "%";
+
+      const optionsDiv = document.getElementById("options");
+      optionsDiv.innerHTML = "";
+
+      q.options.forEach((option, index) => {
+        const btn = document.createElement("button");
+        btn.className = "btn btn-option";
+        btn.textContent = option;
+        btn.onclick = () => selectAnswer(index, btn);
+        optionsDiv.appendChild(btn);
+      });
+
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("time").textContent = timeLeft;
+        if(timeLeft <= 0){
+          clearInterval(timer);
+          if(!answered){
+            timeoutAnswer();
+          }
+        }
+      }, 1000);
+    }
+
+    function selectAnswer(index, btn){
+      if(answered) return;
+      answered = true;
+      clearInterval(timer);
+
+      const q = questions[currentQuestion];
+      const buttons = document.querySelectorAll(".btn-option");
+      buttons.forEach(b => b.disabled = true);
+
+      const feedback = document.getElementById("feedback");
+
+      if(index === q.answer){
+        score += q.points;
+        btn.classList.add("correct");
+        feedback.textContent = "✅ Correcto. " + q.feedback;
+        feedback.className = "feedback good";
+      } else {
+        score -= q.points;
+        btn.classList.add("incorrect");
+        buttons[q.answer].classList.add("correct");
+        feedback.textContent = "❌ Incorrecto. " + q.feedback;
+        feedback.className = "feedback bad";
+      }
+
+      document.getElementById("score").textContent = score;
+      feedback.style.display = "block";
+      document.getElementById("nextBtn").classList.remove("hidden");
+    }
+
+    function timeoutAnswer(){
+      answered = true;
+      const q = questions[currentQuestion];
+      score -= q.points;
+
+      const buttons = document.querySelectorAll(".btn-option");
+      buttons.forEach(b => b.disabled = true);
+      buttons[q.answer].classList.add("correct");
+
+      const feedback = document.getElementById("feedback");
+      feedback.textContent = "⏰ Tiempo agotado. " + q.feedback;
+      feedback.className = "feedback bad";
+      feedback.style.display = "block";
+
+      document.getElementById("score").textContent = score;
+      document.getElementById("nextBtn").classList.remove("hidden");
+    }
+
+    function nextQuestion(){
+      currentQuestion++;
+      if(currentQuestion < questions.length){
+        showQuestion();
+      } else {
+        endGame();
+      }
+    }
+
+    function endGame(){
+      clearInterval(timer);
+      document.getElementById("gameScreen").classList.add("hidden");
+      document.getElementById("endScreen").classList.remove("hidden");
+      document.getElementById("progressBar").style.width = "100%";
+      document.getElementById("finalScore").textContent = score;
+
+      let message = "";
+      if(score >= 28){
+        message = "🏆 Excelente desempeño. Dominas el Teorema del Binomio y el uso del Triángulo de Pascal.";
+      } else if(score >= 18){
+        message = "👍 Buen trabajo. Comprendes el tema, aunque puedes reforzar algunos procedimientos.";
+      } else if(score >= 8){
+        message = "📘 Sigue practicando. Revisa los coeficientes binomiales y los signos en desarrollos con resta.";
+      } else {
+        message = "🔁 Es recomendable repasar el Triángulo de Pascal y resolver nuevamente la actividad.";
+      }
+
+      document.getElementById("finalMessage").textContent = message;
+    }
+
+    function restartGame(){
+      currentQuestion = 0;
+      score = 0;
+      document.getElementById("endScreen").classList.add("hidden");
+      document.getElementById("startScreen").classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
